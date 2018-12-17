@@ -3,6 +3,7 @@ package jitk.spline;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.log4j.LogManager;
@@ -28,6 +29,50 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 
 	public Logger logger = LogManager
 			.getLogger( ThinPlateR2LogRSplineKernelTransformTest.class.getName() );
+
+	public void genTranslationOnly2d()
+	{
+		ndims = 2;
+		srcPts = new double[][]{
+				{ -1.0, 0.0, 1.0, 0.0, -1.0, 1.0 }, // x
+				{ 0.0, -1.0, 0.0, 1.0, -1.0, 1.0 } }; // y
+
+		tgtPts = new double[][]{
+				{ -2.0, -1.0, 0.0, -1.0, -2.0, 0.0 }, // x
+				{ -2.0, -3.0, -2.0, -1.0, -3.0, -1.0 } }; // y
+
+	}
+
+	public void genAffine2d()
+	{
+		ndims = 2;
+		for (double x = -1; x <= 1.1; x += 1.0 )
+			for (double y = -1; y <= 1.1; y += 1.0 )
+				N++;
+
+		srcPts = new double[ndims][N];
+		tgtPts = new double[ndims][N];
+
+		double m00 = 0.8;
+		double m01 = 0.3;
+		double m10 = 0.2;
+		double m11 = 0.9;
+		double b0  = 3.0;
+		double b1  = -1.0;
+
+		int k = 0;
+		for (double x = -1; x <= 1.1; x += 1.0 )
+			for (double y = -1; y <= 1.1; y += 1.0 )
+			{
+				srcPts[0][k] = x;
+				srcPts[1][k] = y;
+
+				tgtPts[0][k] = (x * m00) + (y * m01) + b0;
+				tgtPts[1][k] = (x * m10) + (y * m11) + b1;
+
+				k++;
+			}
+	}
 
 	public void genPtListSimple2d()
 	{
@@ -82,6 +127,67 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 	}
 
 	@Test
+	public void testTPSTranslation2d()
+	{
+		genTranslationOnly2d();
+		final ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform(
+				ndims, srcPts, tgtPts, true );
+
+		double[] p = new double[ ndims ];
+		double[] q = new double[ ndims ];
+		double[] qtrue = new double[ ndims ];
+
+		for( int i = 0; i < srcPts[0].length; i++ )
+		{
+			p[ 0 ] = srcPts[ 0 ][ i ];
+			p[ 1 ] = srcPts[ 1 ][ i ];
+
+			qtrue[ 0 ] = tgtPts[ 0 ][ i ];
+			qtrue[ 1 ] = tgtPts[ 1 ][ i ];
+
+			tps.apply( p, q );
+		}
+	}
+
+	@Test
+	public void testTPSAffine2d()
+	{
+		genAffine2d();
+		final ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform( ndims, srcPts, tgtPts, true );
+
+		double[] p = new double[ ndims ];
+		double[] q = new double[ ndims ];
+		double[] qtrue = new double[ ndims ];
+		
+		// ensure that the estimation correctly finds the parameters in the case 
+		// when there is no warp component
+		// note that the parameters stored in the tps should find are (I - A)
+		// where I is the identity matrix and A is the affine that is applied
+		assertEquals( "tps affine parameter 00 ", -0.2, tps.aMatrix[0][0], 0.01 );
+		assertEquals( "tps affine parameter 01 ",  0.3, tps.aMatrix[0][1], 0.01 );
+		assertEquals( "tps affine parameter 10 ",  0.2, tps.aMatrix[1][0], 0.01 );
+		assertEquals( "tps affine parameter 11 ", -0.1, tps.aMatrix[1][1], 0.01 );
+		assertEquals( "tps b parameter 0 ",  3, tps.bVector[0], 0.01 );
+		assertEquals( "tps b parameter 1 ", -1, tps.bVector[1], 0.01 );
+
+		for ( int i = 0; i < srcPts[ 0 ].length; i++ )
+		{
+
+			p[ 0 ] = srcPts[ 0 ][ i ];
+			p[ 1 ] = srcPts[ 1 ][ i ];
+
+			qtrue[ 0 ] = tgtPts[ 0 ][ i ];
+			qtrue[ 1 ] = tgtPts[ 1 ][ i ];
+
+			tps.apply( p, q );
+
+			assertEquals( "tps affine 2d (" + i + ")x", qtrue[ 0 ], q[ 0 ], 0.01 );
+			assertEquals( "tps affine 2d (" + i + ")y", qtrue[ 1 ], q[ 1 ], 0.01 );
+		}
+
+	}
+
+	@Test
 	public void testTPSInverseConvenience()
 	{
 		final double[] target = new double[]{ 0.5, 0.5 };
@@ -98,8 +204,8 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 
 		double[] invResultXfm = tps.apply( invResult );
 		logger.debug( "final error   : " + finalError );
-		logger.debug( "final guess   : " + XfmUtils.printArray( invResult ) );
-		logger.debug( "final guessXfm: " + XfmUtils.printArray( invResultXfm ) );
+		logger.debug( "final guess   : " + Arrays.toString( invResult ) );
+		logger.debug( "final guessXfm: " + Arrays.toString( invResultXfm ) );
 
 		assertTrue( "tolerance met", ( finalError < tolerance  ));
 	}
