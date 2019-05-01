@@ -98,14 +98,14 @@
 		<ejml.version>0.24</ejml.version>
 		<log4j.version>1.2.17</log4j.version>
 
-		<!-- NB: Deploy releases to the ImageJ Maven repository. -->
-		<releaseProfiles>deploy-to-imagej</releaseProfiles>
+		<!-- NB: Deploy releases to the SciJava Maven repository. -->
+		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 	</properties>
 
 	<repositories>
 		<repository>
-			<id>imagej.public</id>
-			<url>http://maven.imagej.net/content/groups/public</url>
+			<id>scijava.public</id>
+			<url>http://maven.scijava.org/content/groups/public</url>
 		</repository>
 	</repositories>
 
