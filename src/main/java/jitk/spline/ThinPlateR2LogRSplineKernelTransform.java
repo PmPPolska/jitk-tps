@@ -49,6 +49,8 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 	protected double[] weights; // TODO: make the weights do something :-P
 
+	protected double[] tmpDisplacement;
+
 	protected static final double EPS = 1e-8;
 
 	protected static Logger logger = LogManager.getLogger( 
@@ -62,6 +64,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		this.ndims = ndims;
 		sourceLandmarks = null;
 		nLandmarks = 0;
+		tmpDisplacement = new double[ ndims ];
 	}
 
 	public ThinPlateR2LogRSplineKernelTransform( final int ndims,
@@ -229,7 +232,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		return gMatrix;
 	}
 
-	protected double normSqrd( final double[] v )
+	public static double normSqrd( final double[] v )
 	{
 		double nrm = 0;
 		for ( int i = 0; i < v.length; i++ )
@@ -525,7 +528,9 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		for ( int lnd = 0; lnd < nLandmarks; lnd++ )
 		{
 			srcPtDisplacement( lnd, thispt, tmpDisplacement );
-			final double nrm = r2Logr( Math.sqrt( normSqrd( tmpDisplacement ) ) );
+
+			final double nrm = r2LogrFromDisplacement( tmpDisplacement );
+//			final double nrm = r2Logr( Math.sqrt( normSqrd( tmpDisplacement )));
 
 			for ( int d = 0; d < ndims; d++ )
 				result[ d ] += nrm * dMatrix.get( d, di );
@@ -1059,7 +1064,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		}
 	}
 
-	private static double r2Logr( final double r )
+	public static double r2Logr( final double r )
 	{
 		double nrm = 0;
 		if ( r > EPS )
@@ -1067,6 +1072,22 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 			nrm = r * r * Math.log( r );
 		}
 		return nrm;
+	}
+
+	/*
+	 * Computes the kernel from a displacement vector, more efficiently 
+	 * than the naive way (avoids a square root).
+	 */
+	public static double r2LogrFromDisplacement( final double[] displacement )
+	{
+		double s = 0; // sum of squared errors
+		for ( int d = 0; d < displacement.length; d++ )
+			s += displacement[ d ] * displacement[ d ];
+
+		if ( s <= EPS )
+			return 0;
+
+		return 0.5 * s * Math.log( s );
 	}
 
 }

@@ -10,9 +10,6 @@ public class SpeedMemoryOptimization {
 	double[][] srcPts;
 	double[][] tgtPts;
 
-	float[][] srcPtsF;
-	float[][] tgtPtsF;
-	
 	int ndims;
 	int N;     // # landmarks
 	double ptScale = 10;
@@ -26,10 +23,6 @@ public class SpeedMemoryOptimization {
 	}
 	
 	public SpeedMemoryOptimization(int N, int ndims, double scale){
-		setup(N,ndims,scale);
-	}
-	
-	public SpeedMemoryOptimization(int N, int ndims, float scale){
 		setup(N,ndims,scale);
 	}
 	
@@ -48,23 +41,6 @@ public class SpeedMemoryOptimization {
 		{
 			srcPts[d][i] = scale * rand.nextDouble();
 			tgtPts[d][i] = srcPts[d][i] + offScale * rand.nextDouble();
-			
-		}
-	}
-	
-	public void setup(int N, int ndims, float scale){
-		logger.info("setup float");
-		this.N = N;
-		this.ndims = ndims;
-		this.ptScale = scale;
-		srcPtsF = new float[ndims][N];
-		tgtPtsF = new float[ndims][N];
-		
-		for (int d=0; d<ndims; d++) for( int i=0; i<N; i++ )
-		{
-			srcPtsF[d][i] = (float)(scale * rand.nextDouble());
-			tgtPtsF[d][i] = (float)(srcPtsF[d][i] + offScale * rand.nextDouble());
-			
 		}
 	}
 	
@@ -72,105 +48,138 @@ public class SpeedMemoryOptimization {
 	 * Tried varying the linear system solver
 	 * (in KernelTransform) for speed
 	 */
-	public void speed(){
-	
-		long startTime = System.currentTimeMillis();
-//		
-//		ThinPlateR2LogRSplineKernelTransformFloat tps = new ThinPlateR2LogRSplineKernelTransformFloat( ndims, srcPtsF, tgtPtsF );
-//		tps.computeW();
-//		
-		long endTime = System.currentTimeMillis();
-//		logger.info("(N="+N+") total time: " + (endTime-startTime) + "ms" );
+	public void speed() {
 
-		
-		startTime = System.currentTimeMillis();
+		long startTime = System.currentTimeMillis();
+
+		ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform(ndims, srcPts, tgtPts);
+
+		long endTime = System.currentTimeMillis();
+		logger.info("sep (N=" + N + ") total time: " + (endTime - startTime) + "ms");
+
+		double[] pt = new double[ndims];
+		double[] result = new double[ndims];
+
+		for (int i = 0; i < N; i++) {
+			for (int d = 0; d < ndims; d++) {
+				pt[d] = srcPts[d][i];
+			}
+			tps.apply(pt, result);
+		}
+	}
+
+	public long testKernelSpeedupApply( final int N, final double scale, final Random random )
+	{
+		long startTime = System.currentTimeMillis();
 		
 		ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform( ndims, srcPts, tgtPts );
 		
-		endTime = System.currentTimeMillis();
-		logger.info("sep (N="+N+") total time: " + (endTime-startTime) + "ms" );
-		
-//		float[] pt = new float[ndims];
-//		float[] tgt = new float[ndims];
-//		
-//		double avgDiffMag = 0;
-//		double avgOrgErr  = 0;
-//		double avgSepErr  = 0;
-//		
-//		for ( int i=0; i<N; i++){
-//			
-//			for (int d=0; d<ndims; d++){
-//				pt[d]  = srcPtsF[d][i];
-//				tgt[d] = tgtPtsF[d][i]; 
-//			}
-//			
-//			float[] outOrg = tps.transformPoint(pt);
-//			float[] outSep = tpsSep.transformPoint(pt);
-//			
-//			double diff = 0;
-//			double orgErr = 0;
-//			double sepErr = 0;
-//			
-//			for (int d=0; d<ndims; d++){
-//				diff += (outOrg[d] - outSep[d]) * (outOrg[d] - outSep[d]);
-//				orgErr += (outOrg[d] - tgt[d]) * (outOrg[d] - tgt[d]);
-//				sepErr += (tgt[d] - outSep[d]) * (tgt[d] - outSep[d]);
-//			}
-//			diff = Math.sqrt(diff);
-//			orgErr = Math.sqrt(orgErr);
-//			sepErr = Math.sqrt(sepErr);
-//			
-//			avgDiffMag += diff;
-//			avgOrgErr  += orgErr;
-//			avgSepErr  += sepErr;
-//		}
-//		
-//		avgDiffMag /= N;
-//		
-//		System.out.println("avgDiffMag: " + avgDiffMag);
-//		System.out.println("avg Err Mag Orig: " + avgOrgErr);
-//		System.out.println("avg Err Mag Sep : " + avgSepErr);
-		
-		
-	}
-	
-	/**
-	 * Tried varying the linear system solver
-	 * (in KernelTransform) for speed
-	 */
-	public void memory(){
-	
-		long startTime = System.currentTimeMillis();
-		
-		ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform( ndims, srcPtsF, tgtPtsF );
-		
 		long endTime = System.currentTimeMillis();
-		logger.info("(N="+N+") total time: " + (endTime-startTime) + "ms" );
+		//System.out.println("sep (N="+N+") total time: " + (endTime-startTime) + "ms" );
 		
+		double[] pt = new double[ndims];
+		double[] result = new double[ndims];
+		
+		startTime = System.currentTimeMillis();
+		for ( int i=0; i<N; i++)
+		{
+			int j = random.nextInt( pt.length );
+
+			for (int d=0; d<ndims; d++){
+				pt[d]  = srcPts[d][j] + scale * random.nextDouble();
+			}
+			tps.apply( pt, result );
+		}
+
+		endTime = System.currentTimeMillis();
+		
+		return endTime-startTime;
+
+	}
+
+	public static void testKernelSpeedup()
+	{
+		double scale = 10;
+
+		int N = 1000000;
+		int Niters = 20;
+		double[] displacement = new double[ 3 ];
+
+		
+		Random rand = new Random( 0l );
+		for( int j = 0; j < Niters; j++ )
+		{
+			long startTimeNew = System.currentTimeMillis();
+
+			for( int i = 0; i < N; i++ )
+			{
+				for( int d = 0; d < 3; d++ )
+				{
+					displacement[ d ] = scale * rand.nextDouble();
+				}
+
+				ThinPlateR2LogRSplineKernelTransform.r2LogrFromDisplacement( displacement );
+			}
+
+			long endTimeNew = System.currentTimeMillis();
+			long runTimeNew = endTimeNew - startTimeNew;
+			System.out.println( " " + runTimeNew );
+		}
+
+		System.out.println( " " );
+		rand = new Random( 0l );
+
+		for( int j = 0; j < Niters; j++ )
+		{
+			long startTime = System.currentTimeMillis();
+			for( int i = 0; i < N; i++ )
+			{
+				for( int d = 0; d < 3; d++ )
+				{
+					displacement[ d ] = scale * rand.nextDouble();
+				}
+
+				double r = ThinPlateR2LogRSplineKernelTransform.normSqrd( displacement );
+				ThinPlateR2LogRSplineKernelTransform.r2Logr( Math.sqrt( r ));
+			}
+			long endTime = System.currentTimeMillis();
+			long runTimeOld = endTime - startTime;
+		}
 	}
 	
 	public static void main(String[] args) {
 		
 		System.out.println("starting");
 		
-//		int[] NList = new int[]{20, 50, 100};
-		int[] NList = new int[]{2000};
+		int[] NList = new int[]{100, 200, 400, 800, 1200 };
 		
-//		int ndims = 3;
-		int ndims = 2;
+		int ndims = 3;
+		int numTrials = 35;
 		
-//		int numTrials = 15;
-		int numTrials = 2;
+		int NtestPoints = 10000;
+		double scale = 5.0;
 		
-		for (int i=0; i<NList.length; i++)
-		{
-			SpeedMemoryOptimization smo = new SpeedMemoryOptimization( NList[i], ndims, 10f );
-			for( int t=0; t<numTrials; t++){
-				smo.speed();
+		int numToSkip = 5;
+
+		Random random = new Random();
+		for (int i = 0; i < NList.length; i++) {
+
+			System.out.println("tests with " + NList[i] + " landmarks");
+			SpeedMemoryOptimization smo = new SpeedMemoryOptimization(NList[i], ndims, 10f);
+			double avgTime = 0;
+			for (int t = 0; t < numTrials; t++) {
+				// smo.speed();
+
+				long runtime = smo.testKernelSpeedupApply(NtestPoints, scale, random);
+
+				if (t >= numToSkip) {
+					avgTime += runtime;
+				}
 			}
+			avgTime /= (numTrials - numToSkip);
+			System.out.println("" + avgTime);
 		}
-		
-		
+
 		System.out.println("finished");
 		System.exit(0);
 	}
