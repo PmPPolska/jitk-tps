@@ -11,7 +11,7 @@
 
 	<groupId>jitk</groupId>
 	<artifactId>jitk-tps</artifactId>
-	<version>3.0.1-SNAPSHOT</version>
+	<version>3.0.2-SNAPSHOT</version>
 
 	<name>JavaITK thin plate spline</name>
 	<description>A java port of the ITK thin plate spline implementation.</description>
