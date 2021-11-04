@@ -3,13 +3,13 @@ package jitk.spline;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.factory.LinearSolver;
 import org.ejml.factory.LinearSolverFactory;
 import org.ejml.ops.CommonOps;
 import org.ejml.ops.NormOps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -53,8 +53,8 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 	protected static final double EPS = 1e-8;
 
-	protected static Logger logger = LogManager.getLogger( 
-			ThinPlateR2LogRSplineKernelTransform.class.getName() );
+	protected static Logger logger = LoggerFactory.getLogger( 
+			ThinPlateR2LogRSplineKernelTransform.class );
 
 	/*
 	 * Constructs an identity thin plate spline transform
