@@ -76,7 +76,7 @@
 
 	<scm>
 		<url>https://github.com/saalfeldlab/jitk-tps</url>
-		<connection>scm:git:git://github.com/saalfeldlab/jitk-tps</connection>
+		<connection>scm:git:https://github.com/saalfeldlab/jitk-tps</connection>
 		<developerConnection>scm:git:git@github.com:saalfeldlab/jitk-tps</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
