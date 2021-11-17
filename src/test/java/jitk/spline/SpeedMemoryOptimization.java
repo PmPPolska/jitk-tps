@@ -2,8 +2,8 @@ package jitk.spline;
 
 import java.util.Random;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SpeedMemoryOptimization {
 
@@ -16,7 +16,7 @@ public class SpeedMemoryOptimization {
 	double offScale = 1; // scale for offsets
 	
 	public static Random rand = new Random( 31415926536l );
-	public Logger logger = LogManager.getLogger(SpeedMemoryOptimization.class.getName());
+	public Logger logger = LoggerFactory.getLogger(SpeedMemoryOptimization.class);
 	
 	public SpeedMemoryOptimization(int N, int ndims){
 		setup(N,ndims,ptScale);

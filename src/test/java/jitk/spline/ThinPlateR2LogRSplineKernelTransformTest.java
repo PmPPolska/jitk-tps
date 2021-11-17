@@ -6,11 +6,11 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.ops.CommonOps;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ThinPlateR2LogRSplineKernelTransformTest
 {
@@ -27,8 +27,8 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 	int ndims;
 	int N;
 
-	public Logger logger = LogManager
-			.getLogger( ThinPlateR2LogRSplineKernelTransformTest.class.getName() );
+	public Logger logger = LoggerFactory
+			.getLogger( ThinPlateR2LogRSplineKernelTransformTest.class );
 
 	public void genTranslationOnly2d()
 	{

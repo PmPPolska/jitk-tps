@@ -3,8 +3,8 @@ package jitk.spline;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.ops.CommonOps;
 import org.ejml.ops.NormOps;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransformInverseGradientDescent
 {
@@ -41,8 +41,8 @@ public class TransformInverseGradientDescent
 
 	double beta = 0.7;
 
-	protected static Logger logger = LogManager.getLogger(
-			TransformInverseGradientDescent.class.getName() );
+	protected static Logger logger = LoggerFactory.getLogger(
+			TransformInverseGradientDescent.class );
 
 	public TransformInverseGradientDescent( int ndims, ThinPlateR2LogRSplineKernelTransform xfm )
 	{
