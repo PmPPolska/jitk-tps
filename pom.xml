@@ -85,8 +85,8 @@
 		<url>https://github.com/saalfeldlab/jitk-tps/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>Travis CI</system>
-		<url>https://travis-ci.org/saalfeldlab/jitk-tps</url>
+		<system>GitHub Actions</system>
+		<url>https://github.com/saalfeldlab/jitk-tps/actions</url>
 	</ciManagement>
 
 	<properties>
