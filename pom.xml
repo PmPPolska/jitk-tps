@@ -95,7 +95,7 @@
 		<license.copyrightOwners>Howard Hughes Medical Institute.</license.copyrightOwners>
 		<license.projectName>JavaITK thin plate spline.</license.projectName>
 
-		<ejml.version>0.24</ejml.version>
+		<ejml.version>0.25</ejml.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>

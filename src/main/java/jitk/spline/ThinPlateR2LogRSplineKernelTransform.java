@@ -4,8 +4,8 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import org.ejml.data.DenseMatrix64F;
-import org.ejml.factory.LinearSolver;
 import org.ejml.factory.LinearSolverFactory;
+import org.ejml.interfaces.linsol.LinearSolver;
 import org.ejml.ops.CommonOps;
 import org.ejml.ops.NormOps;
 import org.slf4j.Logger;
@@ -344,12 +344,9 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 			wMatrix = new DenseMatrix64F( ndims * nLandmarks, 1 );
 			pMatrix = null;
 		}
-		
-//		gMatrix = new DenseMatrix64F( ndims, ndims );
-		
-		final DenseMatrix64F lMatrix = computeL( kMatrix, pMatrix );
 
-		final LinearSolver< DenseMatrix64F > solver;
+		final DenseMatrix64F lMatrix = computeL( kMatrix, pMatrix );
+		final LinearSolver<DenseMatrix64F> solver;
 		if ( nLandmarks < ndims * ndims )
 		{
 			logger.debug( "pseudo inverse solver" );
