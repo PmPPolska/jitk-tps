@@ -11,7 +11,7 @@
 
 	<groupId>jitk</groupId>
 	<artifactId>jitk-tps</artifactId>
-	<version>3.0.3-SNAPSHOT</version>
+	<version>3.0.3</version>
 
 	<name>JavaITK thin plate spline</name>
 	<description>A java port of the ITK thin plate spline implementation.</description>
@@ -78,7 +78,7 @@
 		<url>https://github.com/saalfeldlab/jitk-tps</url>
 		<connection>scm:git:https://github.com/saalfeldlab/jitk-tps</connection>
 		<developerConnection>scm:git:git@github.com:saalfeldlab/jitk-tps</developerConnection>
-		<tag>HEAD</tag>
+		<tag>jitk-tps-3.0.3</tag>
 	</scm>
 	<issueManagement>
 		<system>GitHub</system>
