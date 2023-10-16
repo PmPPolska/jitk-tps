@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,9 +19,9 @@
  */
 package jitk.spline;
 
-import org.ejml.data.DenseMatrix64F;
-import org.ejml.ops.CommonOps;
-import org.ejml.ops.NormOps;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.dense.row.NormOps_DDRM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,24 +31,24 @@ public class TransformInverseGradientDescent
 
 	ThinPlateR2LogRSplineKernelTransform xfm;
 
-	DenseMatrix64F jacobian;
+	DMatrixRMaj jacobian;
 
-	DenseMatrix64F directionalDeriv; // derivative in direction of dir (the
+	DMatrixRMaj directionalDeriv; // derivative in direction of dir (the
 										// descent direction )
 
-	DenseMatrix64F descentDirectionMag; // computes dir^T directionalDeriv
+	DMatrixRMaj descentDirectionMag; // computes dir^T directionalDeriv
 										// (where dir^T is often
 										// -directionalDeriv)
 
-	DenseMatrix64F dir; // descent direction
+	DMatrixRMaj dir; // descent direction
 
-	DenseMatrix64F errorV; // error vector ( errorV = target - estimateXfm )
+	DMatrixRMaj errorV; // error vector ( errorV = target - estimateXfm )
 
-	DenseMatrix64F estimate; // current estimate
+	DMatrixRMaj estimate; // current estimate
 
-	DenseMatrix64F estimateXfm; // current estimateXfm
+	DMatrixRMaj estimateXfm; // current estimateXfm
 
-	DenseMatrix64F target;
+	DMatrixRMaj target;
 
 	double error = 9999.0;
 
@@ -67,10 +67,10 @@ public class TransformInverseGradientDescent
 	{
 		this.ndims = ndims;
 		this.xfm = xfm;
-		dir = new DenseMatrix64F( ndims, 1 );
-		errorV = new DenseMatrix64F( ndims, 1 );
-		directionalDeriv = new DenseMatrix64F( ndims, 1 );
-		descentDirectionMag = new DenseMatrix64F( 1, 1 );
+		dir = new DMatrixRMaj( ndims, 1 );
+		errorV = new DMatrixRMaj( ndims, 1 );
+		directionalDeriv = new DMatrixRMaj( ndims, 1 );
+		descentDirectionMag = new DMatrixRMaj( 1, 1 );
 	}
 
 	public void setEps( double eps )
@@ -85,45 +85,45 @@ public class TransformInverseGradientDescent
 
 	public void setJacobian( double[][] mtx )
 	{
-		this.jacobian = new DenseMatrix64F( mtx );
+		this.jacobian = new DMatrixRMaj( mtx );
 		logger.trace( "setJacobian:\n" + this.jacobian );
 	}
 
 	public void setTarget( double[] tgt )
 	{
-		this.target = new DenseMatrix64F( ndims, 1 );
+		this.target = new DMatrixRMaj( ndims, 1 );
 		target.setData( tgt );
 	}
 
-	public DenseMatrix64F getErrorVector()
+	public DMatrixRMaj getErrorVector()
 	{
 		return errorV;
 	}
 
-	public DenseMatrix64F getDirection()
+	public DMatrixRMaj getDirection()
 	{
 		return dir;
 	}
 
-	public DenseMatrix64F getJacobian()
+	public DMatrixRMaj getJacobian()
 	{
 		return jacobian;
 	}
 
 	public void setEstimate( double[] est )
 	{
-		this.estimate = new DenseMatrix64F( ndims, 1 );
+		this.estimate = new DMatrixRMaj( ndims, 1 );
 		estimate.setData( est );
 	}
 
 	public void setEstimateXfm( double[] est )
 	{
-		this.estimateXfm = new DenseMatrix64F( ndims, 1 );
+		this.estimateXfm = new DMatrixRMaj( ndims, 1 );
 		estimateXfm.setData( est );
 		updateError();
 	}
 
-	public DenseMatrix64F getEstimate()
+	public DMatrixRMaj getEstimate()
 	{
 		return estimate;
 	}
@@ -153,49 +153,49 @@ public class TransformInverseGradientDescent
 	 */
 	public void computeDirectionSteepest()
 	{
-		DenseMatrix64F tmp = new DenseMatrix64F( ndims, 1 );
+		final DMatrixRMaj tmp = new DMatrixRMaj( ndims, 1 );
 
 		logger.trace( "\nerrorV:\n" + errorV );
 
-		CommonOps.mult( jacobian, estimate, tmp );
+		CommonOps_DDRM.mult( jacobian, estimate, tmp );
 		// TODO this line is wrong isnt it
-		CommonOps.subEquals( tmp, errorV );
+		CommonOps_DDRM.subtractEquals( tmp, errorV );
 
 		// now tmp contains Ax-b
-		CommonOps.multTransA( 2, jacobian, tmp, dir );
+		CommonOps_DDRM.multTransA( 2, jacobian, tmp, dir );
 
 		// normalize dir
-		double norm = NormOps.normP2( dir );
+		final double norm = NormOps_DDRM.normP2( dir );
 		// normalize
 		// TODO put in a check if norm is too small
-		CommonOps.divide( norm, dir );
+		CommonOps_DDRM.divide( norm, dir );
 
 		// compute the directional derivative
-		CommonOps.mult( jacobian, dir, directionalDeriv );
+		CommonOps_DDRM.mult( jacobian, dir, directionalDeriv );
 
 		// go in the negative gradient direction to minimize cost
-		CommonOps.scale( -1, dir );
+		CommonOps_DDRM.scale( -1, dir );
 	}
 
 	public void computeDirection()
 	{
-		CommonOps.solve( jacobian, errorV, dir );
+		CommonOps_DDRM.solve( jacobian, errorV, dir );
 
-		double norm = NormOps.normP2( dir );
-		CommonOps.divide( norm, dir );
+		final double norm = NormOps_DDRM.normP2( dir );
+		CommonOps_DDRM.divide( norm, dir );
 
 		// compute the directional derivative
-		CommonOps.mult( jacobian, dir, directionalDeriv );
+		CommonOps_DDRM.mult( jacobian, dir, directionalDeriv );
 
 		//
-		CommonOps.multTransA( dir, directionalDeriv, descentDirectionMag );
+		CommonOps_DDRM.multTransA( dir, directionalDeriv, descentDirectionMag );
 
 		logger.debug( "descentDirectionMag: " + descentDirectionMag.get( 0 ) );
 	}
 
 	/**
 	 * Uses Backtracking Line search to determine a step size.
-	 * 
+	 *
 	 * @param c the armijoCondition parameter
 	 * @param beta the fraction to multiply the step size at each iteration ( less than 1 )
 	 * @param maxtries max number of tries
@@ -228,35 +228,35 @@ public class TransformInverseGradientDescent
 
 	/**
 	 * Returns true if the armijo condition is satisfied.
-	 * 
+	 *
 	 * @param c the c parameter
 	 * @param t the step size
 	 * @return true if the step size satisfies the condition
 	 */
 	public boolean armijoCondition( double c, double t )
 	{
-		double[] d = dir.data;
-		double[] x = estimate.data; // give a convenient name
+		final double[] d = dir.data;
+		final double[] x = estimate.data; // give a convenient name
 
-		double[] x_ap = new double[ ndims ];
+		final double[] x_ap = new double[ ndims ];
 		for ( int i = 0; i < ndims; i++ )
 			x_ap[ i ] = x[ i ] + t * d[ i ];
 
 		// don't have to do this in here - this should be reused
 		// double[] phix = xfm.apply( x );
 		// TODO make sure estimateXfm is updated at the correct time
-		double[] phix = estimateXfm.data;
-		double[] phix_ap = xfm.apply( x_ap );
+		final double[] phix = estimateXfm.data;
+		final double[] phix_ap = xfm.apply( x_ap );
 
-		double fx = squaredError( phix );
-		double fx_ap = squaredError( phix_ap );
+		final double fx = squaredError( phix );
+		final double fx_ap = squaredError( phix_ap );
 
 		// descentDirectionMag is a scalar
 		// computeExpectedDescentReduction();
-//		CommonOps.multTransA( dir, directionalDeriv, descentDirectionMag );
+//		CommonOps_DDRM.multTransA( dir, directionalDeriv, descentDirectionMag );
 //		logger.debug( "descentDirectionMag: " + descentDirectionMag.get( 0 ) );
 
-		double m = sumSquaredErrorsDeriv( this.target.data, phix ) * descentDirectionMag.get( 0 );
+		final double m = sumSquaredErrorsDeriv( this.target.data, phix ) * descentDirectionMag.get( 0 );
 
 		logger.trace( "   f( x )     : " + fx );
 		logger.trace( "   f( x + ap ): " + fx_ap );
@@ -286,31 +286,31 @@ public class TransformInverseGradientDescent
 		logger.trace( "estimate:\n" + estimate );
 
 		// go in the negative gradient direction to minimize cost
-//		CommonOps.scale( -stepSize / norm, dir );
-//		CommonOps.addEquals( estimate, dir );
-		
+//		CommonOps_DDRM.scale( -stepSize / norm, dir );
+//		CommonOps_DDRM.addEquals( estimate, dir );
+
 		// dir should be pointing in the descent direction
-		CommonOps.addEquals( estimate, stepSize, dir );
+		CommonOps_DDRM.addEquals( estimate, stepSize, dir );
 
 		logger.trace( "new estimate:\n" + estimate );
 	}
-	
+
 	public void updateEstimateNormBased( double stepSize )
 	{
 		logger.debug( "step size: " + stepSize );
 		logger.trace( "estimate:\n" + estimate );
 
-		double norm = NormOps.normP2( dir );
+		final double norm = NormOps_DDRM.normP2( dir );
 		logger.debug( "norm: " + norm );
 
 		// go in the negative gradient direction to minimize cost
 		if ( norm > stepSize )
 		{
-			CommonOps.scale( -stepSize / norm, dir );
+			CommonOps_DDRM.scale( -stepSize / norm, dir );
 		}
-		
-		CommonOps.addEquals( estimate, dir );
-		
+
+		CommonOps_DDRM.addEquals( estimate, dir );
+
 		logger.trace( "new estimate:\n" + estimate );
 	}
 
@@ -323,18 +323,18 @@ public class TransformInverseGradientDescent
 		}
 
 		// errorV = estimate - target
-//		CommonOps.sub( estimateXfm, target, errorV );
-		
+//		CommonOps_DDRM.sub( estimateXfm, target, errorV );
+
 		// ( errorV = target - estimateXfm  )
-		CommonOps.sub( target, estimateXfm, errorV );
-		
+		CommonOps_DDRM.subtract( target, estimateXfm, errorV );
+
 		logger.trace( "#########################" );
 		logger.trace( "updateError, estimate   :\n" + estimate );
 		logger.trace( "updateError, estimateXfm:\n" + estimateXfm );
 		logger.trace( "updateError, target     :\n" + target );
 		logger.trace( "updateError, error      :\n" + errorV );
 		logger.trace( "#########################" );
-		
+
 		// set scalar error equal to max of component-wise errors
 		error = Math.abs( errorV.get( 0 ) );
 		for ( int i = 1; i < ndims; i++ )
@@ -348,7 +348,7 @@ public class TransformInverseGradientDescent
 	/**
 	 * This function returns \nabla f ^T \nabla f where f = || y - x ||^2 and
 	 * the gradient is taken with respect to x
-	 * 
+	 *
 	 * @param y
 	 * @param x
 	 * @return
@@ -364,7 +364,7 @@ public class TransformInverseGradientDescent
 
 	public static double sumSquaredErrors( double[] y, double[] x )
 	{
-		int ndims = y.length;
+		final int ndims = y.length;
 
 		double err = 0.0;
 		for ( int i = 0; i < ndims; i++ )
@@ -373,7 +373,7 @@ public class TransformInverseGradientDescent
 		return err;
 	}
 
-	public static void copyVectorIntoArray( DenseMatrix64F vec, double[] array )
+	public static void copyVectorIntoArray(final  DMatrixRMaj vec, final double[] array )
 	{
 		System.arraycopy( vec.data, 0, array, 0, vec.getNumElements() );
 	}

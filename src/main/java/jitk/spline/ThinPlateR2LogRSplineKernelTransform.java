@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,11 +22,13 @@ package jitk.spline;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import org.ejml.data.DenseMatrix64F;
-import org.ejml.interfaces.linsol.LinearSolver;
-import org.ejml.factory.LinearSolverFactory;
-import org.ejml.ops.CommonOps;
-import org.ejml.ops.NormOps;
+import org.ejml.data.DMatrix1Row;
+import org.ejml.data.DMatrixD1;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.dense.row.NormOps_DDRM;
+import org.ejml.dense.row.factory.LinearSolverFactory_DDRM;
+import org.ejml.interfaces.linsol.LinearSolverDense;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +52,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 	protected final int ndims;
 
-	protected DenseMatrix64F dMatrix;
+	protected DMatrix1Row dMatrix;
 
 	protected double[][] aMatrix;
 
@@ -72,7 +74,10 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 	protected static final double EPS = 1e-8;
 
-	protected static Logger logger = LoggerFactory.getLogger( 
+	final DMatrix1Row I; // identity matrix (ndims x ndims)
+	final DMatrixD1 tmp; // (ndims x ndims) matrix for temporary storage
+
+	protected static Logger logger = LoggerFactory.getLogger(
 			ThinPlateR2LogRSplineKernelTransform.class );
 
 	/*
@@ -84,6 +89,9 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		sourceLandmarks = null;
 		nLandmarks = 0;
 		tmpDisplacement = new double[ ndims ];
+
+		I = buildIdentity(ndims);
+		tmp = new DMatrixRMaj( ndims, ndims );
 	}
 
 	public ThinPlateR2LogRSplineKernelTransform( final int ndims,
@@ -113,6 +121,9 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		else
 			nLandmarks = 0;
 
+		I = buildIdentity( ndims );
+		tmp = new DMatrixRMaj( ndims, ndims );
+
 		computeW( buildDisplacements( tgtPts ) );
 	}
 
@@ -139,15 +150,18 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 			}
 		}
 
+		I = buildIdentity( ndims );
+		tmp = new DMatrixRMaj( ndims, ndims );
+
 		computeW( buildDisplacements( tgtPts ) );
 	}
 
 	/**
-	 * Constructor with weighted point matches
-	 * 
+	 * Constructor with weiDMatrixghted point matches
+	 *
 	 * @param ndims num dimensions
 	 * @param srcPts source points
-	 * @param tgtPts target points 
+	 * @param tgtPts target points
 	 * @param weights point weights
 	 */
 	public ThinPlateR2LogRSplineKernelTransform( final int ndims,
@@ -160,7 +174,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	/**
 	 * Constructor with transformation parameters. aMatrix and bVector are
 	 * allowed to be null
-	 * 
+	 *
 	 * @param srcPts source points
 	 * @param aMatrix A matrix
 	 * @param bVector b vector
@@ -181,8 +195,18 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		this.aMatrix = aMatrix;
 		this.bVector = bVector;
 
-		dMatrix = new DenseMatrix64F( ndims, nLandmarks );
+		I = buildIdentity( ndims );
+		tmp = new DMatrixRMaj( ndims, ndims );
+
+		dMatrix = new DMatrixRMaj( ndims, nLandmarks );
 		dMatrix.setData( dMatrixData );
+	}
+
+	private static DMatrixRMaj buildIdentity( final int ndims )
+	{
+		final DMatrixRMaj I = new DMatrixRMaj( ndims, ndims );
+		CommonOps_DDRM.setIdentity(I);
+		return I;
 	}
 
 	public int getNumLandmarks()
@@ -240,10 +264,10 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		this.computeAffine = estimateAffine;
 	}
 
-	protected DenseMatrix64F computeReflexiveG()
+	protected DMatrixRMaj computeReflexiveG()
 	{
-		DenseMatrix64F gMatrix = new DenseMatrix64F( ndims, ndims );
-		CommonOps.fill( gMatrix, 0 );
+		final DMatrixRMaj gMatrix = new DMatrixRMaj( ndims, ndims );
+		CommonOps_DDRM.fill( gMatrix, 0 );
 		for ( int i = 0; i < ndims; i++ )
 		{
 			gMatrix.set( i, i, stiffness );
@@ -261,13 +285,13 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		return nrm;
 	}
 
-	public DenseMatrix64F buildDisplacements( double[][] targetLandmarks )
+	public DMatrixRMaj buildDisplacements( double[][] targetLandmarks )
 	{
-		DenseMatrix64F yMatrix;
+		DMatrixRMaj yMatrix;
 		if ( computeAffine )
-			yMatrix = new DenseMatrix64F( ndims * (nLandmarks + ndims + 1), 1 );
+			yMatrix = new DMatrixRMaj( ndims * (nLandmarks + ndims + 1), 1 );
 		else
-			yMatrix = new DenseMatrix64F( ndims * nLandmarks, 1 );
+			yMatrix = new DMatrixRMaj( ndims * nLandmarks, 1 );
 
 
 		// for (int i = 0; i < nLandmarks; i++) {
@@ -291,14 +315,14 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 		return yMatrix;
 	}
-	
-	public DenseMatrix64F buildDisplacements( float[][] targetLandmarks )
+
+	public DMatrixRMaj buildDisplacements( float[][] targetLandmarks )
 	{
-		DenseMatrix64F yMatrix;
+		DMatrixRMaj yMatrix;
 		if ( computeAffine )
-			yMatrix = new DenseMatrix64F( ndims * (nLandmarks + ndims + 1), 1 );
+			yMatrix = new DMatrixRMaj( ndims * (nLandmarks + ndims + 1), 1 );
 		else
-			yMatrix = new DenseMatrix64F( ndims * nLandmarks, 1 );
+			yMatrix = new DMatrixRMaj( ndims * nLandmarks, 1 );
 
 
 		// for (int i = 0; i < nLandmarks; i++) {
@@ -330,29 +354,29 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	 *
 	 * @param yMatrix the y matrix
 	 */
-	protected void computeW( final DenseMatrix64F yMatrix )
+	protected void computeW( final DMatrixRMaj yMatrix )
 	{
 
-		final DenseMatrix64F kMatrix;
-		final DenseMatrix64F pMatrix;
-		final DenseMatrix64F wMatrix;
+		final DMatrixRMaj kMatrix;
+		final DMatrixRMaj pMatrix;
+		final DMatrixRMaj wMatrix;
 
 		/**
 		 * INITIALIZE MATRICES
 		 */
-		dMatrix = new DenseMatrix64F( ndims, nLandmarks );
-		kMatrix = new DenseMatrix64F( ndims * nLandmarks, ndims * nLandmarks );
+		dMatrix = new DMatrixRMaj( ndims, nLandmarks );
+		kMatrix = new DMatrixRMaj( ndims * nLandmarks, ndims * nLandmarks );
 
 		if ( computeAffine )
 		{
 			aMatrix = new double[ ndims ][ ndims ];
 			bVector = new double[ ndims ];
 
-			pMatrix = new DenseMatrix64F( ( ndims * nLandmarks ),
+			pMatrix = new DMatrixRMaj( ( ndims * nLandmarks ),
 					( ndims * ( ndims + 1 ) ) );
 
-			wMatrix = new DenseMatrix64F( ( ndims * nLandmarks ) + ndims * ( ndims + 1 ), 1 );
-			
+			wMatrix = new DMatrixRMaj( ( ndims * nLandmarks ) + ndims * ( ndims + 1 ), 1 );
+
 		}
 		else
 		{
@@ -360,24 +384,24 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 			// directly to K rather than itself being initialized
 
 			// the W matrix won't hold the affine component
-			wMatrix = new DenseMatrix64F( ndims * nLandmarks, 1 );
+			wMatrix = new DMatrixRMaj( ndims * nLandmarks, 1 );
 			pMatrix = null;
 		}
-		
-//		gMatrix = new DenseMatrix64F( ndims, ndims );
-		
-		final DenseMatrix64F lMatrix = computeL( kMatrix, pMatrix );
 
-		final LinearSolver< DenseMatrix64F > solver;
+//		gMatrix = new DMatrix( ndims, ndims );
+
+		final DMatrixRMaj lMatrix = computeL( kMatrix, pMatrix );
+
+		final LinearSolverDense< DMatrixRMaj > solver;
 		if ( nLandmarks < ndims * ndims )
 		{
 			logger.debug( "pseudo inverse solver" );
-			solver = LinearSolverFactory.pseudoInverse( false );
+			solver = LinearSolverFactory_DDRM.pseudoInverse( false );
 		}
 		else
 		{
 			logger.debug( "linear solver" );
-			solver = LinearSolverFactory.linear( lMatrix.numCols );
+			solver = LinearSolverFactory_DDRM.linear( lMatrix.numCols );
 		}
 
 		// solve linear system
@@ -388,7 +412,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 	}
 
-	protected DenseMatrix64F computeL(DenseMatrix64F kMatrix, DenseMatrix64F pMatrix)
+	protected DMatrixRMaj computeL(final DMatrixRMaj kMatrix, final DMatrixRMaj pMatrix)
 	{
 		computeK( kMatrix );
 
@@ -397,18 +421,18 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		{
 			computeP( pMatrix );
 
-			DenseMatrix64F lMatrix = new DenseMatrix64F( ndims * ( nLandmarks + ndims + 1 ),
+			final DMatrixRMaj lMatrix = new DMatrixRMaj( ndims * ( nLandmarks + ndims + 1 ),
 					ndims * ( nLandmarks + ndims + 1 ) );
-			
-			CommonOps.insert( kMatrix, lMatrix, 0, 0 );
-			CommonOps.insert( pMatrix, lMatrix, 0, kMatrix.getNumCols() );
-			CommonOps.transpose( pMatrix );
 
-			CommonOps.insert( pMatrix, lMatrix, kMatrix.getNumRows(), 0 );
-			CommonOps.insert( kMatrix, lMatrix, 0, 0 );
+			CommonOps_DDRM.insert( kMatrix, lMatrix, 0, 0 );
+			CommonOps_DDRM.insert( pMatrix, lMatrix, 0, kMatrix.getNumCols() );
+			CommonOps_DDRM.transpose( pMatrix );
+
+			CommonOps_DDRM.insert( pMatrix, lMatrix, kMatrix.getNumRows(), 0 );
+			CommonOps_DDRM.insert( kMatrix, lMatrix, 0, 0 );
 			// P matrix should be zero if points are already affinely aligned
 			// bottom left O2 is already zeros after initializing 'lMatrix'
-			
+
 			return lMatrix;
 		}
 		else
@@ -420,21 +444,18 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 	}
 
-	protected void computeP(DenseMatrix64F pMatrix)
+	protected void computeP(final DMatrixD1 pMatrix)
 	{
-		final DenseMatrix64F tmp = new DenseMatrix64F( ndims, ndims );
-		final DenseMatrix64F I = new DenseMatrix64F( ndims, ndims );
-		CommonOps.setIdentity( I );
-		
+
 		int i = 0;
 		while ( i < nLandmarks )
 		{
 			for ( int d = 0; d < ndims; d++ )
 			{
-				CommonOps.scale( sourceLandmarks[ d ][ i ], I, tmp );
-				CommonOps.insert( tmp, pMatrix, i * ndims, d * ndims );
+				CommonOps_DDRM.scale( sourceLandmarks[ d ][ i ], I, tmp );
+				CommonOps_DDRM.insert( tmp, pMatrix, i * ndims, d * ndims );
 			}
-			CommonOps.insert( I, pMatrix, i * ndims, ndims * ndims );
+			CommonOps_DDRM.insert( I, pMatrix, i * ndims, ndims * ndims );
 			i++;
 		}
 	}
@@ -443,18 +464,18 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	 * Builds the K matrix from landmark points and G matrix.
 	 * @param kMatrix the k matrix
 	 */
-	protected void computeK(DenseMatrix64F kMatrix)
+	protected void computeK(final DMatrixRMaj kMatrix)
 	{
 		final double[] res = new double[ ndims ];
 
 		int i = 0;
-		
-		final DenseMatrix64F Gbase = computeReflexiveG();
-		final DenseMatrix64F G = Gbase.copy();
-		
+
+		final DMatrixRMaj Gbase = computeReflexiveG();
+		final DMatrixRMaj G = Gbase.copy();
+
 		while ( i < nLandmarks )
 		{
-			CommonOps.insert( Gbase, kMatrix, i * ndims, i * ndims );
+			CommonOps_DDRM.insert( Gbase, kMatrix, i * ndims, i * ndims );
 
 			int j = i + 1;
 			while ( j < nLandmarks )
@@ -462,8 +483,8 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 				srcPtDisplacement( i, j, res );
 				computeG( res, G );
 
-				CommonOps.insert( G, kMatrix, i * ndims, j * ndims );
-				CommonOps.insert( G, kMatrix, j * ndims, i * ndims );
+				CommonOps_DDRM.insert( G, kMatrix, i * ndims, j * ndims );
+				CommonOps_DDRM.insert( G, kMatrix, j * ndims, i * ndims );
 
 				j++;
 			}
@@ -477,7 +498,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	 * respectively.
 	 * @param wMatrix the w matrix
 	 */
-	protected void reorganizeW (DenseMatrix64F wMatrix )
+	protected void reorganizeW(final DMatrixRMaj wMatrix)
 	{
 		// the deformable (non-affine) part of the transform
 		int ci = 0;
@@ -510,30 +531,26 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 				ci++;
 			}
 		}
-
-		wMatrix = null;
 	}
 
-	public void computeG( final double[] pt, final DenseMatrix64F mtx )
+	public void computeG( final double[] pt, final DMatrixRMaj mtx )
 	{
 
 		final double r = Math.sqrt( normSqrd( pt ) );
 		final double nrm = r2Logr( r );
 
-		CommonOps.setIdentity( mtx );
-		CommonOps.scale( nrm, mtx );
+		CommonOps_DDRM.setIdentity( mtx );
+		CommonOps_DDRM.scale( nrm, mtx );
 	}
 
-	public void computeG( final double[] pt, final DenseMatrix64F mtx,
-			final double w )
+	public void computeG( final double[] pt, final DMatrixRMaj mtx, final double w )
 	{
 
 		computeG( pt, mtx );
-		CommonOps.scale( w, mtx );
+		CommonOps_DDRM.scale( w, mtx );
 	}
 
-	public void computeDeformationContribution( final double[] thispt,
-			final double[] result )
+	public void computeDeformationContribution( final double[] thispt, final double[] result )
 	{
 
 		final double[] tmpDisplacement = new double[ ndims ];
@@ -707,7 +724,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	/**
 	 * Transform a source vector pt into a target vector result. pt and result
 	 * must NOT be the same vector.
-	 * 
+	 *
 	 * @param pt the point
 	 * @param result the result
 	 * @param debug do debug
@@ -786,7 +803,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 	/**
 	 * Returns the index of the target landmark closest to the input point as well
-	 * as the distance to that landmark. 
+	 * as the distance to that landmark.
 	 *
 	 * @param target the point
 	 * @return a pair containing the closest landmark point and its squared
@@ -831,7 +848,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	/**
 	 * Approximates the inverse of the input target point by taking the best of several
 	 * available approximation methods.
-	 * 
+	 *
 	 * @param target the target point
 	 * @return the approximate inverse point
 	 */
@@ -884,17 +901,17 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	}
 
 	/**
-	 * Quickly approximates the inverse of the input target point, 
+	 * Quickly approximates the inverse of the input target point,
 	 * using the affine portion of the transform only.
-	 * 
+	 *
 	 * @param target a point in the target space
-	 * @return approximate inverse 
+	 * @return approximate inverse
 	 */
 	public double[] inverseGuessAffineInv( final double[] target )
 	{
 		// Here, mtx is A + I
-		final DenseMatrix64F mtx = new DenseMatrix64F( ndims + 1, ndims + 1 );
-		final DenseMatrix64F vec = new DenseMatrix64F( ndims + 1, 1 );
+		final DMatrixRMaj mtx = new DMatrixRMaj( ndims + 1, ndims + 1 );
+		final DMatrixRMaj vec = new DMatrixRMaj( ndims + 1, 1 );
 		for ( int i = 0; i < ndims; i++ )
 		{
 			for ( int j = 0; j < ndims; j++ )
@@ -910,12 +927,12 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		mtx.set( ndims, ndims, 1.0 );
 		vec.set( ndims, 0, 1.0 );
 
-		final DenseMatrix64F res = new DenseMatrix64F( ndims + 1, 1 );
+		final DMatrixRMaj res = new DMatrixRMaj( ndims + 1, 1 );
 
-		CommonOps.solve( mtx, vec, res );
+		CommonOps_DDRM.solve( mtx, vec, res );
 
-		final DenseMatrix64F test = new DenseMatrix64F( ndims + 1, 1 );
-		CommonOps.mult( mtx, res, test );
+		final DMatrixRMaj test = new DMatrixRMaj( ndims + 1, 1 );
+		CommonOps_DDRM.mult( mtx, res, test );
 
 		logger.trace( "test result: " + test );
 
@@ -927,7 +944,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 	/**
 	 * Computes the inverse of this transformation.
-	 * 
+	 *
 	 * @param target the target point
 	 * @param result array in which to store the result
 	 * @param tolerance the desired precision - must be greater than zero
@@ -938,8 +955,8 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	{
 		assert tolerance > 0.0;
 
-		double[] guess = initialGuessAtInverse( target );
-		double error = inverseTol( target, guess, tolerance, maxIters );
+		final double[] guess = initialGuessAtInverse( target );
+		final double error = inverseTol( target, guess, tolerance, maxIters );
 
 		for ( int d = 0; d < ndims; d++ )
 			result[ d ] = guess[ d ];
@@ -948,16 +965,16 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	}
 
 	/**
-	 * Computes the inverse of this transformation.  Performs a maximum of 100,000 iterations, 
-	 * returning whatever the estimate is at that point.  
-	 * 
+	 * Computes the inverse of this transformation.  Performs a maximum of 100,000 iterations,
+	 * returning whatever the estimate is at that point.
+	 *
 	 * @param target the target point
 	 * @param tolerance the desired precision - must be greater than zero
 	 * @return the result of applying the inverse transform to the target point
 	 */
 	public double[] inverse( final double[] target, final double tolerance )
 	{
-		double[] out = new double[ ndims ];
+		final double[] out = new double[ ndims ];
 		inverse( target, out, tolerance, 100000 );
 		return out;
 	}
@@ -1017,7 +1034,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 			logger.trace( "guess       : " + XfmUtils.printArray( guess ) );
 			logger.trace( "guessXfm    : " + XfmUtils.printArray( guessXfm ) );
 			logger.trace( "error vector: " + XfmUtils.printArray( inv.getErrorVector().data ) );
-			logger.trace( "error       : " + NormOps.normP2( inv.getErrorVector() ) );
+			logger.trace( "error       : " + NormOps_DDRM.normP2( inv.getErrorVector() ) );
 			logger.trace( "abs error   : " + error );
 			logger.trace( "" );
 
@@ -1030,7 +1047,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	 * Computes the displacement between the i^th and j^th source points.
 	 *
 	 * Stores the result in the input array 'res' Does not validate inputs.
-	 * 
+	 *
 	 * @param i first index
 	 * @param j second index
 	 * @param res result
@@ -1049,7 +1066,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	 * point.
 	 *
 	 * Stores the result in the input array 'res'. Does not validate inputs.
-	 * 
+	 *
 	 * @param i first index
 	 * @param pt the point
 	 * @param res the result
@@ -1068,7 +1085,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	 * point.
 	 *
 	 * Stores the result in the input array 'res'. Does not validate inputs.
-	 * 
+	 *
 	 * @param i first index
 	 * @param pt the point
 	 * @param res the result
@@ -1094,7 +1111,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	}
 
 	/*
-	 * Computes the kernel from a displacement vector, more efficiently 
+	 * Computes the kernel from a displacement vector, more efficiently
 	 * than the naive way (avoids a square root).
 	 */
 	public static double r2LogrFromDisplacement( final double[] displacement )

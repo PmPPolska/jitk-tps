@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,8 +25,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.ejml.data.DenseMatrix64F;
-import org.ejml.ops.CommonOps;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,12 +72,12 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 		srcPts = new double[ndims][N];
 		tgtPts = new double[ndims][N];
 
-		double m00 = 0.8;
-		double m01 = 0.3;
-		double m10 = 0.2;
-		double m11 = 0.9;
-		double b0  = 3.0;
-		double b1  = -1.0;
+		final double m00 = 0.8;
+		final double m01 = 0.3;
+		final double m10 = 0.2;
+		final double m11 = 0.9;
+		final double b0  = 3.0;
+		final double b1  = -1.0;
 
 		int k = 0;
 		for (double x = -1; x <= 1.1; x += 1.0 )
@@ -152,9 +152,9 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 		final ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform(
 				ndims, srcPts, tgtPts, true );
 
-		double[] p = new double[ ndims ];
-		double[] q = new double[ ndims ];
-		double[] qtrue = new double[ ndims ];
+		final double[] p = new double[ ndims ];
+		final double[] q = new double[ ndims ];
+		final double[] qtrue = new double[ ndims ];
 
 		for( int i = 0; i < srcPts[0].length; i++ )
 		{
@@ -174,11 +174,11 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 		genAffine2d();
 		final ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform( ndims, srcPts, tgtPts, true );
 
-		double[] p = new double[ ndims ];
-		double[] q = new double[ ndims ];
-		double[] qtrue = new double[ ndims ];
-		
-		// ensure that the estimation correctly finds the parameters in the case 
+		final double[] p = new double[ ndims ];
+		final double[] q = new double[ ndims ];
+		final double[] qtrue = new double[ ndims ];
+
+		// ensure that the estimation correctly finds the parameters in the case
 		// when there is no warp component
 		// note that the parameters stored in the tps should find are (I - A)
 		// where I is the identity matrix and A is the affine that is applied
@@ -217,11 +217,11 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 		final ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform(
 				ndims, srcPts, tgtPts, true );
 
-		double[] invResult = new double[ 2 ];
+		final double[] invResult = new double[ 2 ];
 
-		double finalError = tps.inverse( target, invResult, tolerance, maxIters );
+		final double finalError = tps.inverse( target, invResult, tolerance, maxIters );
 
-		double[] invResultXfm = tps.apply( invResult );
+		final double[] invResultXfm = tps.apply( invResult );
 		logger.debug( "final error   : " + finalError );
 		logger.debug( "final guess   : " + Arrays.toString( invResult ) );
 		logger.debug( "final guessXfm: " + Arrays.toString( invResultXfm ) );
@@ -232,23 +232,23 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 	@Test
 	public void testTPSInverse2()
 	{
-		double[] target = new double[]{ 0.5, 0.5 };
+		final double[] target = new double[]{ 0.5, 0.5 };
 		// double[] guessBase = new double[] { 5.0, 5.0 };
 		// double[] guess = new double[ 2 ];
 
-		double[] guess = new double[]{ 5.0, 5.0 };
+		final double[] guess = new double[]{ 5.0, 5.0 };
 
-		double[][] mtx;
-		double error = 9999;
+		final double[][] mtx;
+		final double error = 9999;
 
 		genPtListSimple2d();
 
 		final ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform(
 				ndims, srcPts, tgtPts, false );
 
-		double finalError= tps.inverseTol( target, guess, 0.5, 1000 );
+		final double finalError= tps.inverseTol( target, guess, 0.5, 1000 );
 
-		double[] guessXfm = tps.apply( guess );
+		final double[] guessXfm = tps.apply( guess );
 		logger.debug( "final error   : " + finalError );
 		logger.debug( "final guess   : " + XfmUtils.printArray( guess ) );
 		logger.debug( "final guessXfm: " + XfmUtils.printArray( guessXfm ) );
@@ -263,9 +263,9 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 		assertEquals( "within tolerance 0.25 y", 0.5, guess[ 1 ], 0.25 );
 
 		// try for a few different initial guesses
-		double[] guessBase = new double[] { 0.0, 0.0 };
+		final double[] guessBase = new double[] { 0.0, 0.0 };
 		for (double xm = -2.5; xm <= 2.5; xm += 0.5)
-			for (double ym = -2.5; ym <= 2.5; ym += 0.5) 
+			for (double ym = -2.5; ym <= 2.5; ym += 0.5)
 			{
 				System.arraycopy(guessBase, 0, guess, 0, ndims);
 				guess[0] *= xm;
@@ -288,22 +288,22 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 	@Test
 	public void testStepSize()
 	{
-		double[] target = new double[]{ 0.5, 0.5 };
-		double[] guessBase = new double[]{ 2.0, 2.0 };
-		double[] guess = new double[ 2 ];
-		double[] guessXfm = new double[ 2 ];
+		final double[] target = new double[]{ 0.5, 0.5 };
+		final double[] guessBase = new double[]{ 2.0, 2.0 };
+		final double[] guess = new double[ 2 ];
+		final double[] guessXfm = new double[ 2 ];
 
 		double[][] mtx;
-		double error = 9999;
-		double tolerance = 0.5;
+		final double error = 9999;
+		final double tolerance = 0.5;
 
 		genPtListSimple2d();
 
 		final ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform(
 				ndims, srcPts, tgtPts, false );
 
-		int xm = 1;
-		int ym = 1;
+		final int xm = 1;
+		final int ym = 1;
 
 		System.arraycopy( guessBase, 0, guess, 0, ndims );
 		guess[ 0 ] *= xm;
@@ -312,7 +312,7 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 		tps.apply( guess, guessXfm );
 		mtx = tps.jacobian( guess );
 
-		TransformInverseGradientDescent inv = new TransformInverseGradientDescent( ndims,
+		final TransformInverseGradientDescent inv = new TransformInverseGradientDescent( ndims,
 				tps );
 		inv.setTarget( target );
 		inv.setEstimate( guess );
@@ -320,10 +320,10 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 		inv.setJacobian( mtx );
 		inv.setEps( 0.001 * tolerance );
 
-		double c = 0.5;
-		double beta = 0.75;
+		final double c = 0.5;
+		final double beta = 0.75;
 
-		int k = 0;
+		final int k = 0;
 		mtx = tps.jacobian( guess );
 		inv.setJacobian( mtx );
 
@@ -331,7 +331,7 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 		inv.computeDirection();
 
 		// is the Armijo condition satisfied
-		boolean isArmijo = inv.armijoCondition( c, 1.0 );
+		final boolean isArmijo = inv.armijoCondition( c, 1.0 );
 
 		System.out.println( "isArmijo: " + isArmijo );
 
@@ -340,13 +340,13 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 	@Test
 	public void testTPSInverse()
 	{
-		double[] target = new double[]{ 0.0, 0.0 };
-		double[] guessBase = new double[]{ 5.0, 5.0 };
-		double[] guess = new double[ 2 ];
+		final double[] target = new double[]{ 0.0, 0.0 };
+		final double[] guessBase = new double[]{ 5.0, 5.0 };
+		final double[] guess = new double[ 2 ];
 
 		double[][] mtx;
 		double error = 9999;
-		int maxIters = 2000;
+		final int maxIters = 2000;
 
 		genPtListSimple2d();
 
@@ -354,20 +354,20 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 				ndims, srcPts, tgtPts, false );
 
 		// try for a few different initial guesses
-		int xm = 1;
-		int ym = 1;
+		final int xm = 1;
+		final int ym = 1;
 		System.arraycopy( guessBase, 0, guess, 0, ndims );
 		guess[ 0 ] *= xm;
 		guess[ 1 ] *= ym;
 
-		double tolerance = 0.5;
+		final double tolerance = 0.5;
 
-		double[] guessXfm = new double[ ndims ];
+		final double[] guessXfm = new double[ ndims ];
 
 		tps.apply( guess, guessXfm );
 		mtx = tps.jacobian( guess );
 
-		TransformInverseGradientDescent inv = new TransformInverseGradientDescent( ndims,
+		final TransformInverseGradientDescent inv = new TransformInverseGradientDescent( ndims,
 				tps );
 		inv.setTarget( target );
 		inv.setEstimate( guess );
@@ -375,8 +375,8 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 		inv.setJacobian( mtx );
 		inv.setEps( 0.001 * tolerance );
 
-		double c = 0.5;
-		double beta = 0.75;
+		final double c = 0.5;
+		final double beta = 0.75;
 
 		int k = 0;
 		while ( error >= tolerance && k < maxIters )
@@ -386,7 +386,7 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 			inv.oneIteration( false );
 			inv.computeDirection();
 
-			double t = inv.backtrackingLineSearch( c, beta, 100, 1.0 );
+			final double t = inv.backtrackingLineSearch( c, beta, 100, 1.0 );
 			inv.updateEstimate( t );
 			inv.updateError();
 
@@ -407,8 +407,8 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 	@Test
 	public void testGradientDescentLinear()
 	{
-		double[] target = new double[]{ 10.0, 10.0 };
-		double[] guess = new double[]{ 1.0, 1.0 };
+		final double[] target = new double[]{ 10.0, 10.0 };
+		final double[] guess = new double[]{ 1.0, 1.0 };
 		double[][] mtx = new double[][]{
 				{ -1.0, 0.0 },
 				{ 0.0, -1.0 } };
@@ -426,21 +426,21 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 
 	private double testGradientDescent( double[][] mtx, double[] target, double[] guess )
 	{
-		int ndims = target.length;
+		final int ndims = target.length;
 
-		DenseMatrix64F mat = new DenseMatrix64F( mtx );
+		final DMatrixRMaj mat = new DMatrixRMaj( mtx );
 
-		DenseMatrix64F guessVec = new DenseMatrix64F( ndims, 1 );
+		final DMatrixRMaj guessVec = new DMatrixRMaj( ndims, 1 );
 		guessVec.setData( guess );
 
-		DenseMatrix64F xfmVec = new DenseMatrix64F( ndims, 1 );
+		final DMatrixRMaj xfmVec = new DMatrixRMaj( ndims, 1 );
 
-		CommonOps.mult( mat, guessVec, xfmVec );
+		CommonOps_DDRM.mult( mat, guessVec, xfmVec );
 		logger.info( "xfmVec:\n" + xfmVec );
 
 		final ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform(
 				ndims );
-		TransformInverseGradientDescent inv = new TransformInverseGradientDescent( ndims,
+		final TransformInverseGradientDescent inv = new TransformInverseGradientDescent( ndims,
 				tps );
 		inv.setJacobian( mtx );
 		inv.setTarget( target );
@@ -456,14 +456,14 @@ public class ThinPlateR2LogRSplineKernelTransformTest
 			inv.computeDirection();
 			inv.updateEstimate( 1.0 );
 
-			CommonOps.mult( mat, guessVec, xfmVec );
+			CommonOps_DDRM.mult( mat, guessVec, xfmVec );
 			inv.setEstimateXfm( xfmVec.data );
 
-			CommonOps.mult( mat, inv.getEstimate(), xfmVec );
+			CommonOps_DDRM.mult( mat, inv.getEstimate(), xfmVec );
 			inv.setEstimateXfm( xfmVec.data );
 
 			error = inv.getError();
-			double sqerr = inv.squaredError( xfmVec.data );
+			final double sqerr = inv.squaredError( xfmVec.data );
 
 			System.out.println( "estimate ( " + k + " ) : "
 					+ XfmUtils.printArray( inv.getEstimate().data ) );

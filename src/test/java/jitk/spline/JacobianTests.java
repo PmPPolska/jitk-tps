@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,8 +21,8 @@ package jitk.spline;
 
 import static org.junit.Assert.assertEquals;
 
-import org.ejml.data.DenseMatrix64F;
-import org.ejml.ops.CommonOps;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
 import org.junit.Test;
 
 public class JacobianTests
@@ -57,8 +57,8 @@ public class JacobianTests
 
 		final ThinPlateR2LogRSplineKernelTransform tps = new ThinPlateR2LogRSplineKernelTransform( ndims, srcPts, tgtPts );
 
-		double[] p = new double[ 2 ];
-		double[] q = new double[ 2 ];
+		final double[] p = new double[ 2 ];
+		final double[] q = new double[ 2 ];
 		int i = 0;
 		for ( double x = -4; x < 4; x++ )
 			for ( double y = -4; y < 4; y++ )
@@ -67,9 +67,9 @@ public class JacobianTests
 				p[ 1 ] = y;
 
 				tps.apply( p, q );
-				double[][] j = tps.jacobian( p );
-				DenseMatrix64F jacobianMtx = new DenseMatrix64F( j );
-				double jdet = CommonOps.det( jacobianMtx );
+				final double[][] j = tps.jacobian( p );
+				final DMatrixRMaj jacobianMtx = new DMatrixRMaj( j );
+				final double jdet = CommonOps_DDRM.det( jacobianMtx );
 
 				assertEquals( "Affine determinant pt (" + i + ")", 4, jdet, 0.01 );
 				i++;
