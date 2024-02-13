@@ -77,6 +77,8 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	final DMatrix1Row I; // identity matrix (ndims x ndims)
 	final DMatrixD1 tmp; // (ndims x ndims) matrix for temporary storage
 
+	private LinearSolverDense< DMatrixRMaj > solver;
+
 	protected static Logger logger = LoggerFactory.getLogger(
 			ThinPlateR2LogRSplineKernelTransform.class );
 
@@ -97,7 +99,7 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	public ThinPlateR2LogRSplineKernelTransform( final int ndims,
 			final double[][] srcPts, final double[][] tgtPts )
 	{
-		this( ndims, srcPts, tgtPts, true );
+		this( ndims, srcPts, tgtPts, true, null );
 	}
 
 	public ThinPlateR2LogRSplineKernelTransform( final int ndims,
@@ -106,11 +108,18 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 		this( ndims, srcPts, tgtPts, true );
 	}
 
+	public ThinPlateR2LogRSplineKernelTransform( final int ndims,
+			final double[][] srcPts, final double[][] tgtPts, boolean computeAffine)
+	{
+		this( ndims, srcPts, tgtPts, computeAffine, null);
+	}
+
 	/*
 	 * Constructor with point matches
 	 */
 	public ThinPlateR2LogRSplineKernelTransform( final int ndims,
-			final double[][] srcPts, final double[][] tgtPts, boolean computeAffine )
+			final double[][] srcPts, final double[][] tgtPts, boolean computeAffine,
+			final LinearSolverDense< DMatrixRMaj > solver )
 	{
 		this.ndims = ndims;
 		this.sourceLandmarks = srcPts;
@@ -123,6 +132,8 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 		I = buildIdentity( ndims );
 		tmp = new DMatrixRMaj( ndims, ndims );
+
+		this.solver = solver;
 
 		computeW( buildDisplacements( tgtPts ) );
 	}
@@ -237,6 +248,11 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 	public double[] getKnotWeights()
 	{
 		return dMatrix.getData();
+	}
+
+	public void setSolver( final LinearSolverDense< DMatrixRMaj >  solver )
+	{
+		this.solver = solver;
 	}
 
 	/**
@@ -392,16 +408,18 @@ public class ThinPlateR2LogRSplineKernelTransform implements Serializable
 
 		final DMatrixRMaj lMatrix = computeL( kMatrix, pMatrix );
 
-		final LinearSolverDense< DMatrixRMaj > solver;
-		if ( nLandmarks < ndims * ndims )
+		if( solver == null )
 		{
-			logger.debug( "pseudo inverse solver" );
-			solver = LinearSolverFactory_DDRM.pseudoInverse( false );
-		}
-		else
-		{
-			logger.debug( "linear solver" );
-			solver = LinearSolverFactory_DDRM.linear( lMatrix.numCols );
+			if ( nLandmarks < ndims * ndims )
+			{
+				logger.debug( "pseudo inverse solver" );
+				solver = LinearSolverFactory_DDRM.pseudoInverse( false );
+			}
+			else
+			{
+				logger.debug( "linear solver" );
+				solver = LinearSolverFactory_DDRM.linear( lMatrix.numCols );
+			}
 		}
 
 		// solve linear system
