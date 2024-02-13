@@ -94,6 +94,7 @@
 		<license.licenseName>apache_v2</license.licenseName>
 		<license.copyrightOwners>Howard Hughes Medical Institute.</license.copyrightOwners>
 		<license.projectName>JavaITK thin plate spline.</license.projectName>
+		<ejml.version>0.41</ejml.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
@@ -108,8 +109,8 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>com.googlecode.efficient-java-matrix-library</groupId>
-			<artifactId>ejml</artifactId>
+			<groupId>org.ejml</groupId>
+			<artifactId>ejml-all</artifactId>
 			<version>${ejml.version}</version>
 		</dependency>
 		<dependency>
