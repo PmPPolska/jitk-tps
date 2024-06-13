@@ -110,7 +110,12 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.ejml</groupId>
-			<artifactId>ejml-all</artifactId>
+			<artifactId>ejml-core</artifactId>
+			<version>${ejml.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.ejml</groupId>
+			<artifactId>ejml-ddense</artifactId>
 			<version>${ejml.version}</version>
 		</dependency>
 		<dependency>
